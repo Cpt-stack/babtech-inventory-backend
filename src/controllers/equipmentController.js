@@ -91,20 +91,20 @@ class EquipmentController {
             if (affectedRows === 0) {
                 return res.status(404).json({
                     success: false,
-                    error: `Equipment with ID ${asset_id} not found.`
+                    error: `Equipment with Asset ID ${asset_id} not found.`
                 })
             }
 
             return res.status(200).json({
                 success: true,
-                message: `Equipment with ID: ${id} has been deleted`
+                message: `Equipment with Asset Id: ${asset_id} has been deleted`
             })
 
         } catch (error) {
             console.log("Error occurred:", error.message);
             res.status(500).json({
                 success: false,
-                error: "Error occurrenced at server"
+                error: "Error occurred at server"
             })
         }
     }

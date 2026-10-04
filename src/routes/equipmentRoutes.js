@@ -9,7 +9,7 @@ const router = Router();  // create an expreaa Router object
 router.get('/get', (request, response) => equipmentController.getAll(request, response))
 // when a GET request comes to / , it calls equipmentController.getAll() ---- the router.get("/") -- means  --- /api/equipmewnt( declared in the server) 
 
-router.delete("/delete/:id", (req, res) => { equipmentController.deleteEquipment(req, res) })
+router.delete("/delete/:asset_id", (req, res) => equipmentController.deleteEquipment(req, res))
 
 router.post('/Add', (req, res) => equipmentController.create(req, res));
 // or 
