@@ -35,7 +35,7 @@ class EquipmentController {
 
 
         try {
-            const {asset_id,name,category,condition,status} = request.body;
+            const { asset_id,name, category, condition, status } = request.body;
 
             // basic vaildation
 
@@ -57,7 +57,7 @@ class EquipmentController {
 
 
             // create through Modal 
-            const newId = await Equipment.create({asset_id,name,category,condition,status});
+            const newId = await Equipment.create({ asset_id ,name ,category ,condition ,status});
 
             return  response.status(201).json({ // 201 -- a new resource was successfully created
                 success: true,

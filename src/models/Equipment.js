@@ -6,7 +6,7 @@ class Equipment {
     constructor(id, asset_id, name, category, condition, status, register_at) {
         this.id = id;
         this.asset_id = asset_id,
-        this.name = name;
+            this.name = name;
         this.category = category;
         this.condition = condition;
         this.status = status;
@@ -30,7 +30,7 @@ class Equipment {
 
         )
     };
-//  to find equipment by asset_id 
+    //  to find equipment by asset_id 
     static async findByAssetId() {
         const query = "select asset_id from equipment where asset_id = ?";
         const [rows] = await pool.query(query, [asset_id]);
@@ -56,12 +56,17 @@ class Equipment {
     //  to enter an equipment into the database
 
 
-    static async create(data){
-        const {asset_id,name,category,condition = "Good", status="Available", registered_at} = data;
+    static async create(data) {
+        const { asset_id, name, category, condition = "Good", status = "Available", registered_at } = data;
 
-        const query = ` insert into equipment(asset_id , name , category,\`condition\`, status) values(?,?,?,?,?)`  ;
+        // const query = "INSERT INTO equipment(asset_id, name, category, `condition`, status) VALUES (?, ?, ?, ?, ?)" ;
 
-        const [result] = await pool.query(query , [asset_id,name,category,condition,status]);
+        const query = `
+    INSERT INTO equipment (asset_id, name, category, \`condition\`, status)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+
+        const [result] = await pool.query(query, [asset_id, name, category, condition, status]);
 
         return result.insertId;
     }
