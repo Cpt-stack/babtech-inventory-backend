@@ -85,13 +85,13 @@ class EquipmentController {
     // DELETE/api
     async deleteEquipment(req, res) {
         try {
-            const { id } = req.params;
+            const { asset_id} = req.params;
 
-            const affectedRows = await Equipment.delete(id);
+            const affectedRows = await Equipment.delete(asset_id);
             if (affectedRows === 0) {
                 return res.status(404).json({
                     success: false,
-                    error: `Equipment with ID ${id} not found.`
+                    error: `Equipment with ID ${asset_id} not found.`
                 })
             }
 

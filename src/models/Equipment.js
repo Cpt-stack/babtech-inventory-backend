@@ -71,10 +71,10 @@ class Equipment {
         return result.insertId;
     }
 
-    static async delete(id) {
-        const query = `DELETE FROM equipment WHERE id =?`
+    static async delete(asset_id) {
+        const query = `DELETE FROM equipment WHERE asset_id =?`
 
-        const [rows] = await pool.query(query, [id])
+        const [rows] = await pool.query(query, [asset_id])
         return rows.affectedRows;
     }
 
