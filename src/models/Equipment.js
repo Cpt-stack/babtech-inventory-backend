@@ -57,11 +57,11 @@ class Equipment {
 
 
     static async create(data){
-        const {asset_id , name , category , condition = "Good" , status="Available" , registered_at} = data;
+        const {asset_id,name,category,condition = "Good", status="Available", registered_at} = data;
 
-        const query = ` insert into equipment(asset_id , name , category,\`condition\`, status) value(? , ?, ?, ?, ?)`  ;
+        const query = ` insert into equipment(asset_id , name , category,\`condition\`, status) values(?,?,?,?,?)`  ;
 
-        const [result] = await pool.query(query , [asset_id ,name , category,condition,status]);
+        const [result] = await pool.query(query , [asset_id,name,category,condition,status]);
 
         return result.insertId;
     }
