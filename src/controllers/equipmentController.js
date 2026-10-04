@@ -7,9 +7,9 @@ class EquipmentController {
 
     // GET / api/equipment
     async getAll(request, response) {  // intended to handle a request
-    //  .... request --  contains information  coming from the client ---- response --- what the server uses to send something back to the client
+        //  .... request --  contains information  coming from the client ---- response --- what the server uses to send something back to the client
 
-    // we are use async and await because the dadtabse opeartions take time , so you wait for MYsql to respond.
+        // we are use async and await because the dadtabse opeartions take time , so you wait for MYsql to respond.
         try {
 
             const equipmentList = await Equipment.findAll();
@@ -35,7 +35,7 @@ class EquipmentController {
 
 
         try {
-            const { asset_id,name, category, condition, status } = request.body;
+            const { asset_id, name, category, condition, status } = request.body;
 
             // basic vaildation
 
@@ -57,16 +57,23 @@ class EquipmentController {
 
 
             // create through Modal 
-            const newId = await Equipment.create({ asset_id ,name ,category ,condition ,status});
+            const newId = await Equipment.create({ asset_id, name, category, condition, status });
 
-            return  response.status(201).json({ // 201 -- a new resource was successfully created
+            return response.status(201).json({ // 201 -- a new resource was successfully created
                 success: true,
                 message: "Equipment registered successfully",
-                data: {id: newId , asset_id , category }
+                data: {
+                    id: newId,
+                    asset_id,
+                    name,
+                    category,
+                    condition: condition || "Good",
+                    status: status || "Available"
+                }
             })
         }
 
-        catch(error){
+        catch (error) {
             console.error("An Error occurred", error.message)
             return response.status(500).json({// 500 ---something went wrong in the server
                 success: false,
