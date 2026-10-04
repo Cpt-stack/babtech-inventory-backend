@@ -5,8 +5,8 @@ import pool from "../config/db.js";
 class Equipment {
     constructor(id, asset_id, name, category, condition, status, register_at) {
         this.id = id;
-        this.asset_id = asset_id,
-            this.name = name;
+        this.asset_id = asset_id;
+        this.name = name;
         this.category = category;
         this.condition = condition;
         this.status = status;
@@ -31,8 +31,8 @@ class Equipment {
         )
     };
     //  to find equipment by asset_id 
-    static async findByAssetId() {
-        const query = "select asset_id from equipment where asset_id = ?";
+    static async findByAssetId(asset_id) {
+        const query = "select * from equipment where asset_id = ?";
         const [rows] = await pool.query(query, [asset_id]);
 
 
