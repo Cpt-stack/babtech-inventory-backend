@@ -81,6 +81,33 @@ class EquipmentController {
             })
         }
     }
+
+    // DELETE/api
+    async deleteEquipment(req, res) {
+        try {
+            const { id } = req.params;
+
+            const affectedRows = await Equipment.delete(id);
+            if (affectedRows === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: `Equipment with ID ${id} not found.`
+                })
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: `Equipment with ID: ${id} has been deleted`
+            })
+
+        } catch (error) {
+            console.log("Error occurred:", error.message);
+            res.status(500).json({
+                success: false,
+                error: "Error occurrenced at server"
+            })
+        }
+    }
 }
 
 export default new EquipmentController();

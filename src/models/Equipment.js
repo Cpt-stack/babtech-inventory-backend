@@ -71,6 +71,13 @@ class Equipment {
         return result.insertId;
     }
 
+    static async delete(id) {
+        const query = `DELETE FROM equipment WHERE id =?`
+
+        const [rows] = await pool.query(query, [id])
+        return rows.affectedRows;
+    }
+
 }
 
 export default Equipment;
