@@ -35,14 +35,14 @@ class EquipmentController {
 
 
         try {
-            const { asset_id, name, cateogry, condition, status } = request.body;
+            const { asset_id, name, category, condition, status } = request.body;
 
             // basic vaildation
 
-            if (!asset_id || !name || !cateogry) {
+            if (!asset_id || !name || !category) {
                 return response.status(400).json({ // 400 -- bad request
                     success: false,
-                    error: "Please provide asset_id , name , cateogry."
+                    error: "Please provide asset_id , name , category."
                 })
             }
             //  checks if asset_id exists
@@ -57,12 +57,12 @@ class EquipmentController {
 
 
             // create through Modal 
-            const newId = await Equipment.create({asset_id , name , cateogry , condition,status});
+            const newId = await Equipment.create({asset_id , name , category , condition,status});
 
             return  response.status(201).json({ // 201 -- a new resource was successfully created
                 success: true,
                 message: "Equipment registered successfully",
-                data: {id: newId , asset_id , cateogry }
+                data: {id: newId , asset_id , category }
             })
         }
 
