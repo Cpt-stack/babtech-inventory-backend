@@ -112,7 +112,7 @@ class transactionController {
             return res.status(200).json({
                 success: true,
                 message: "Equipment successfully returned",
-                tranaction_id: newReturnId
+                transaction_id: newReturnId
             })
 
         }

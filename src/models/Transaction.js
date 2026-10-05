@@ -110,15 +110,18 @@ class Transaction {
     }
 
     static async returnItem(data) {
-        const { transaction_id, equipment_id, return_date, return_time, condition_in, damage_description, remarks } = data;
+        const { transaction_id, asset_id, return_date, return_time, condition_in, damage_description, remarks } = data;
         const connection = await pool.getConnection()
         try {
             await connection.beginTransaction();
 
             // handles the status when an equipment is returned
-            const whatCategorySQL = `SELECT category FROM equipment where id = ?`
-            const [rows] = await connection.query(whatCategorySQL, [equipment_id]);
-            const category = rows.length > 0 ? rows[0].category : null;
+            const whatCategorySQL = `SELECT category FROM equipment where asset_id = ?`
+            const [rows] = await connection.query(whatCategorySQL, [asset_id]);
+
+            const item = rows[0]
+
+            const category = rows.length > 0 ? item.category : null;
             const policy = getReturnPolicy(category);
             const targetStatus = policy.resolveStatus(condition_in)
 
@@ -132,7 +135,7 @@ class Transaction {
             const updateEquipmentSQL = `UPDATE equipment set status = ? , \`condition\` = ? where id =?`
 
 
-            await connection.query(updateEquipmentSQL, [targetStatus, condition_in, equipment_id])
+            await connection.query(updateEquipmentSQL, [targetStatus, condition_in, item.id])
 
 
 
