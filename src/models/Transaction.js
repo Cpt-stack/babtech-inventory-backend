@@ -4,22 +4,19 @@ import getReturnPolicy from "../utils/statusResolver.js";
 class Transaction {
 
     static async checkout(data) {
-        const { equipment_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out } = data;
+        const { asset_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out } = data;
 
 
-        // Grab a dedicated connection from the pool so we can control the transaction
+        
         const connection = await pool.getConnection();
 
         try {
-            await connection.beginTransaction(); // begins the transactions
+            await connection.beginTransaction(); 
 
+            const checkSQL = `SELECT id , name , status FROM equipment WHERE asset_id = ? FOR UPDATE`
 
-            //lock and inspects cuurent status of the requested equipment
-
-            const checkSQL = `SELECT id , name , status FROM equipment WHERE id = ? FOR UPDATE`
-
-            const [rows] = await connection.query(checkSQL, [equipment_id])
-            if (rows === 0) {
+            const [rows] = await connection.query(checkSQL, [asset_id])
+            if (rows.length === 0) {
                 const error = new Error("Equipment not Found");
                 error.statusCode = 404;
                 throw error;
@@ -37,10 +34,10 @@ class Transaction {
 
 
             const insertSQL = `insert into transactions(equipment_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out , status) values( ?,?,?,?,?,?,?, "Active")`;
-            const [transResult] = await connection.query(insertSQL, [equipment_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out]);
+            const [transResult] = await connection.query(insertSQL, [item.id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out]);
             const updateSQL = `UPDATE equipment set status = "Checked Out" where id = ?`
 
-            await connection.query(updateSQL, [equipment_id]);
+            await connection.query(updateSQL, [item.id]);
 
 
             // Both succeeded, make changes permanent
