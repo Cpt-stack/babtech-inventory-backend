@@ -4,18 +4,17 @@ import getReturnPolicy from "../utils/statusResolver.js";
 class Transaction {
 
     static async checkout(data) {
-        const { asset_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out } = data;
+        const { equipment_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out } = data;
 
 
-        
+
         const connection = await pool.getConnection();
 
         try {
-            await connection.beginTransaction(); 
+            await connection.beginTransaction();
 
-            const checkSQL = `SELECT id , name , status FROM equipment WHERE asset_id = ? FOR UPDATE`
-
-            const [rows] = await connection.query(checkSQL, [asset_id])
+            const checkSQL = `SELECT id, name, status FROM equipment WHERE id = ? FOR UPDATE`;
+            const [rows] = await connection.query(checkSQL, [equipment_id]);
             if (rows.length === 0) {
                 const error = new Error("Equipment not Found");
                 error.statusCode = 404;
@@ -34,13 +33,13 @@ class Transaction {
 
 
             const insertSQL = `insert into transactions(equipment_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out , status) values( ?,?,?,?,?,?,?, "Active")`;
-            const [transResult] = await connection.query(insertSQL, [item.id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out]);
+            const [transResult] = await connection.query(insertSQL, [equipment_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out]);
             const updateSQL = `UPDATE equipment set status = "Checked Out" where id = ?`
 
-            await connection.query(updateSQL, [item.id]);
+            await connection.query(updateSQL, [equipment_id]);
 
 
-            // Both succeeded, make changes permanent
+            
             await connection.commit();
             return transResult.insertId;
 
@@ -158,7 +157,7 @@ class Transaction {
     static async findEquipment(equipment_id) {
 
         try {
-            const sql = `SELECT t.* e.asset_id , e.name AS equipment_name 
+            const sql = `SELECT t.*, e.asset_id , e.name AS equipment_name 
         FROM transactions t
         JOIN equipment e ON equipment_id = e.id
         WHERE t.equipment_id = ?
