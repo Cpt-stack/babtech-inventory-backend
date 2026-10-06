@@ -36,7 +36,7 @@ export const protect = async (req, res, next) => {
         }
 
         // 4. Attach verified user to request object
-        req.Users = currentUser;
+        req.users = currentUser;
         next();
     } catch (error) {
         if (error.name === "JsonWebTokenError") {
@@ -52,12 +52,22 @@ export const protect = async (req, res, next) => {
 // Guard 2: Restrict route to specific roles (RBAC)
 export const restrictTo = (...roles) => {
     return (req, res, next) => {
-        // req.user was set by protect middleware right before this
-        if (!roles.includes(req.user.role)) {
+        if (!req.user || !req.user.role) {
+            return next(
+                new AppError("Access denied. User authentication not found.", 401)
+            );
+        }
+
+        // Case-insensitive comparison so "Technician" matches "technician"
+        const allowedRoles = roles.map((r) => r.toLowerCase());
+        const userRole = req.user.role.toLowerCase();
+
+        if (!allowedRoles.includes(userRole)) {
             return next(
                 new AppError("You do not have permission to perform this action.", 403)
             );
         }
+
         next();
     };
 };
