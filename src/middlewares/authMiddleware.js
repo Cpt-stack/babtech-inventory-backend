@@ -35,8 +35,8 @@ export const protect = async (req, res, next) => {
             );
         }
 
-        // 4. Attach verified user to request object
-        req.users = currentUser;
+        // 4. Attach verified user to request object (singular: req.user)
+        req.user = currentUser;
         next();
     } catch (error) {
         if (error.name === "JsonWebTokenError") {
