@@ -18,7 +18,10 @@ class SensitiveReturnPolicy extends ReturnPolicy {
         if (condition === "Damaged") {
             return "Damaged";
         }
-        return "Under Maintenance";
+        if (condition === "Fair") {
+            return "Under Maintenance"; 
+        }
+        return "Available"; // 
     }
 }
 
@@ -36,7 +39,7 @@ const policyRegister = {
     default: new StandardReturnPolicy(),
     Laptop: new StandardReturnPolicy(),
     Projector: new SensitiveReturnPolicy(),
-    cables: new ConsumablesReturnPolicy(),
+    Cables: new ConsumablesReturnPolicy(),
     Desktop: new StandardReturnPolicy(),
     Camera: new SensitiveReturnPolicy(),
 
@@ -46,8 +49,19 @@ const policyRegister = {
 }
 
 
-
 export default function getReturnPolicy(category) {
-    return policyRegister[category] || policyRegister.default;
+    if (!category) return policyRegister.default;
+
+    // Check exact match first
+    if (policyRegister[category]) {
+        return policyRegister[category];
+    }
+
+    // Fallback: check case-insensitive match
+    const foundKey = Object.keys(policyRegister).find(
+        (key) => key.toLowerCase() === category.toLowerCase()
+    );
+
+    return foundKey ? policyRegister[foundKey] : policyRegister.default;
 }
 

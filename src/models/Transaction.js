@@ -39,7 +39,7 @@ class Transaction {
             await connection.query(updateSQL, [equipment_id]);
 
 
-            
+
             await connection.commit();
             return transResult.insertId;
 
@@ -110,49 +110,53 @@ class Transaction {
 
     static async returnItem(data) {
         const { transaction_id, asset_id, return_date, return_time, condition_in, damage_description, remarks } = data;
-        const connection = await pool.getConnection()
+        const connection = await pool.getConnection();
+
         try {
             await connection.beginTransaction();
 
-            // handles the status when an equipment is returned
-            const whatCategorySQL = `SELECT category FROM equipment where asset_id = ?`
+            // 1. Fetch BOTH id and category
+            const whatCategorySQL = `SELECT id, category FROM equipment WHERE asset_id = ? FOR UPDATE`;
             const [rows] = await connection.query(whatCategorySQL, [asset_id]);
 
-            const item = rows[0]
+            if (rows.length === 0) {
+                const error = new Error(`Equipment with Asset ID ${asset_id} not found.`);
+                error.statusCode = 404;
+                throw error;
+            }
 
-            const category = rows.length > 0 ? item.category : null;
-            const policy = getReturnPolicy(category);
-            const targetStatus = policy.resolveStatus(condition_in)
+            const item = rows[0];
 
+            // 2. Determine target status
+            let targetStatus = "Available";
+            if (getReturnPolicy) {
+                const policy = getReturnPolicy(item.category);
+                targetStatus = policy?.resolveStatus ? policy.resolveStatus(condition_in) : (condition_in === "Damaged" ? "Under Maintenance" : "Available");
+            } else {
+                targetStatus = condition_in === "Damaged" ? "Under Maintenance" : "Available";
+            }
 
-            //  first part ---updates the transaction table to show the it has been returned
-            const updateTransactionSQL = "update transactions set  return_date = ? , return_time = ? , condition_in =? , damage_description =? ,remarks =?, status = 'Completed' where id= ?";
-            await connection.query(updateTransactionSQL, [return_date, return_time, condition_in, damage_description, remarks, transaction_id]);
+            // 3. Update transaction record to Completed
+            const updateTransactionSQL = `
+            UPDATE transactions 
+            SET return_date = ?, return_time = ?, condition_in = ?, damage_description = ?, remarks = ?, status = 'Completed'  WHERE id = `;
+            await connection.query(updateTransactionSQL, [return_date,return_time,condition_in,damage_description || null,remarks || null,transaction_id
+            ]);
 
-
-            // second part---- update the equipment to show the status and condition
-            const updateEquipmentSQL = `UPDATE equipment set status = ? , \`condition\` = ? where id =?`
-
-
-            await connection.query(updateEquipmentSQL, [targetStatus, condition_in, item.id])
-
-
+            // 4. Update equipment record using item.id (now defined!)
+            const updateEquipmentSQL = `UPDATE equipment SET status = ?, \`condition\` = ? WHERE id = ?`;
+            await connection.query(updateEquipmentSQL, [targetStatus, condition_in, item.id]);
 
             await connection.commit();
             return transaction_id;
 
-
-        }
-
-        catch (error) {
+        } catch (error) {
             await connection.rollback();
             throw error;
+        } finally {
+            connection.release();
         }
-
-        finally {
-            connection.release()
-        }
-    };
+    }
 
     static async findEquipment(equipment_id) {
 
