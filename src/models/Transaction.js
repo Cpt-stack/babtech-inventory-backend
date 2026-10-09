@@ -58,7 +58,7 @@ class Transaction {
         const sql = `SELECT t.*, e.asset_id, e.name AS equipment_name
       FROM transactions t
       JOIN equipment e ON t.equipment_id = e.id
-      ORDER BY t.id asc `;
+      ORDER BY t.id desc `;
 
 
         const [rows] = await pool.query(sql);
@@ -88,7 +88,7 @@ class Transaction {
         FROM transactions t 
         JOIN equipment e ON t.equipment_id = e.id
         WHERE t.status = 'Active'
-        ORDER BY t.id ASC `
+        ORDER BY t.id desc `
 
             const [rows] = await pool.query(sql);
 
