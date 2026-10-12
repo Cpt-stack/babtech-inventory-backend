@@ -119,7 +119,7 @@ class authController {
             await Users.setPasswordResetToken(user.id, hashedToken, expiresAt)
 
             const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-            const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+            const resetUrl = `${clientUrl}/reset/${resetToken}`;
 
             // Dev logging: print link in console so you can test without Resend first
             console.log("\n================ PASSWORD RESET LINK ================");
