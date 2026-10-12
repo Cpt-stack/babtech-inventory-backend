@@ -27,6 +27,37 @@ class Users {
         const [rows] = await pool.query(sql, [id]);
         return rows.length > 0 ? rows[0] : null;
     }
+
+
+    static async setPasswordResetToken(userId, hashedToken, expiresAt) {
+
+        const sql = 'UPDATE users set reset_token= ?, reset_token_expires =? where id =?'
+
+        const [rows] = await pool.query(sql, [hashedToken, expiresAt, userId])
+        if (rows.affectedRows === 0) {
+            throw new Error("User not found or No rows were affetced ")
+        }
+
+        return true;
+    }
+
+    static async findByResetToken(hashedToken) {
+        const sql = `SELECT id, email FROM users WHERE reset_token = ? AND reset_token_expires > NOW()`
+        const [results] = await pool.query(sql, [hashedToken])
+
+        return results.length > 0 ? results[0] : null;
+
+    }
+
+    static async updatePassword(userId, newPassword) {
+        const newHashedPasword = await bcrypt.hash(newPassword, 10)
+        const sql = 'UPDATE users set password = ? , reset_token =NULL ,reset_token_expires =NULL where id =?';
+
+        const [rows] = await pool.query(sql, [newHashedPasword, userId])
+        return rows.affectedRows>0 ;
+    }
+
+
 }
 
 export default Users;
