@@ -13,6 +13,12 @@ class Users {
 
     }
 
+    static async findAll() {
+        const sql = `SELECT id, full_name, email, role, created_at FROM users ORDER BY created_at DESC`;
+        const [rows] = await pool.query(sql);
+        return rows;
+    }
+
     static async findByEmail(email) {
         const sql = `SELECT id , full_name , email , password , role,created_at from users where email  = ? `;
 
@@ -54,9 +60,14 @@ class Users {
         const sql = 'UPDATE users set password = ? , reset_token =NULL ,reset_token_expires =NULL where id =?';
 
         const [rows] = await pool.query(sql, [newHashedPasword, userId])
-        return rows.affectedRows>0 ;
+        return rows.affectedRows > 0;
     }
 
+    static async updateRole(userId, newRole) {
+        const sql = 'UPDATE users SET role = ? WHERE id = ?';
+        const [rows] = await pool.query(sql, [newRole, userId]);
+        return rows.affectedRows > 0;
+    }
 
 }
 

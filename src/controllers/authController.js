@@ -47,6 +47,18 @@ class authController {
         }
     }
 
+    async getAllUsers(req, res, next) {
+        try {
+            const users = await Users.findAll();
+            return res.status(200).json({
+                success: true,
+                users
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async login(req, res, next) {
 
         try {
@@ -121,19 +133,15 @@ class authController {
             const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
             const resetUrl = `${clientUrl}/reset/${resetToken}`;
 
-            // Dev logging: print link in console so you can test without Resend first
-            console.log("\n================ PASSWORD RESET LINK ================");
-            console.log(resetUrl);
-            console.log("====================================================\n");
 
             try {
                 await sendPasswordResetEmail(user.email, resetUrl);
             } catch (mailError) {
-                
+
                 // clear the token from the database so the user isn't stuck with an unreceived token.
                 await Users.setPasswordResetToken(user.id, null, null);
 
-                
+
                 return next(new AppError("Failed to deliver reset email. Please try again later.", 500));
             }
 
@@ -176,6 +184,42 @@ class authController {
             next(error)
         }
     }
+
+
+    async updateUserRole(req, res, next) {
+        try {
+            const { targetUserId } = req.params;
+            const { role } = req.body;
+
+            const allowedRoles = ["admin", "technician", "student"];
+
+            if (!role || !allowedRoles.includes(role.toLowerCase())) {
+                return next(new AppError("Invalid role specified. Must be admin, technician, or a Student.", 400));
+            }
+
+            // Prevent self-demotion or self-modification if needed
+            if (parseInt(targetUserId, 10) === req.user.id && role.toLowerCase() !== "admin") {
+                return next(new AppError("You cannot revoke your own admin rights.", 400));
+            }
+
+            const userToUpdate = await Users.findById(targetUserId);
+            if (!userToUpdate) {
+                return next(new AppError("User not found.", 404));
+            }
+
+            const formattedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+
+            await Users.updateRole(targetUserId, formattedRole);
+
+            return res.status(200).json({
+                success: true,
+                message: `User role successfully updated to ${role}.`
+            });
+        } catch (error) {
+            next(error);
+        }
+    };
+
 
 
 }

@@ -22,6 +22,7 @@ app.use('/api/equipment', equipmentRoutes);
 app.use("/api/transactions", transactionRoutes);
 
 
+
 app.get('/api/health' , (req , res)=>{
     res.json({
         status: "API is running"
