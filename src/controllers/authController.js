@@ -133,7 +133,7 @@ class authController {
             const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
             const resetUrl = `${clientUrl}/reset/${resetToken}`;
 
-
+console.log(resetToken)
             try {
                 await sendPasswordResetEmail(user.email, resetUrl);
             } catch (mailError) {
