@@ -7,8 +7,7 @@ const router = Router();
 // Auth Endpoints
 router.post("/register", (req, res, next) => authController.register(req, res, next));
 router.post("/login", (req, res, next) => authController.login(req, res, next));
-router.post("/forgotPassword", (req, res, next) => authController.forgotPassword(req, res, next));
-router.post("/reset/:token", (req, res, next) => authController.resetPassword(req, res, next));
+
 
 // Admin-Only Role Authorization
 router.patch("/:targetUserId/role", protect, restrictTo("admin"), (req, res, next) => authController.updateUserRole(req, res, next));
