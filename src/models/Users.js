@@ -35,33 +35,32 @@ class Users {
     }
 
 
-    static async setPasswordResetToken(userId, hashedToken, expiresAt) {
+    static async setToken(token, expires_At, user_id) {
+        const sql = `UPDATE users SET reset_token = ? , reset_token_expires=? WHERE id =?`
 
-        const sql = 'UPDATE users set reset_token= ?, reset_token_expires =? where id =?'
+      
+        const [rows] = await pool.query(sql, [token, new Date(expires_At), user_id]);
 
-        const [rows] = await pool.query(sql, [hashedToken, expiresAt, userId])
-        if (rows.affectedRows === 0) {
-            throw new Error("User not found or No rows were affetced ")
-        }
-
-        return true;
+        return rows.affectedRows;
     }
 
-    static async findByResetToken(hashedToken) {
-        const sql = `SELECT id, email FROM users WHERE reset_token = ? AND reset_token_expires > NOW()`
-        const [results] = await pool.query(sql, [hashedToken])
+    static async findByToken(token) {
+        const sql = `  SELECT id, reset_token_expires FROM users WHERE reset_token = ? `;
 
-        return results.length > 0 ? results[0] : null;
+        const [rows] = await pool.query(sql, [token]);
 
+        return rows.length > 0 ? rows[0] : null;
     }
 
-    static async updatePassword(userId, newPassword) {
-        const newHashedPasword = await bcrypt.hash(newPassword, 10)
-        const sql = 'UPDATE users set password = ? , reset_token =NULL ,reset_token_expires =NULL where id =?';
+    static async Reset(newHashedPassword, user_id) {
+        const sql = `UPDATE users SET password =?, reset_token = NULL , reset_token_expires=NULL WHERE id =?`
 
-        const [rows] = await pool.query(sql, [newHashedPasword, userId])
-        return rows.affectedRows > 0;
+        const [rows] = await pool.query(sql, [newHashedPassword, user_id]);
+
+        return rows.affectedRows;
     }
+
+
 
     static async updateRole(userId, newRole) {
         const sql = 'UPDATE users SET role = ? WHERE id = ?';

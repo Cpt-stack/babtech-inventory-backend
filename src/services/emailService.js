@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Create reusable Nodemailer transporter using Gmail SMTP
+
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {

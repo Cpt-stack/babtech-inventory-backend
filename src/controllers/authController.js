@@ -8,6 +8,7 @@ import { sendPasswordResetEmail } from "../services/emailService.js";
 
 
 
+
 dotenv.config();
 
 class authController {
@@ -105,7 +106,94 @@ class authController {
         }
     }
 
-    
+    async ForgetPassword(req, res, next) {
+
+        try {
+            const { email } = req.body;
+
+            if (!email.trim()) {
+                throw new AppError("Please provide a valid email.", 400)
+            }
+
+            const user = await Users.findByEmail(email);
+
+
+            if (!user) {
+                throw new AppError("Request Failed", 400)
+            }
+
+            const token = crypto.randomBytes(32).toString("hex");
+            const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+            const now = Date.now()
+            const expires_At = now + 15 * 60 * 1000
+
+            await Users.setToken(
+                hashedToken,
+                expires_At,
+                user.id
+            )
+            const resetUrl = `${process.env.CLIENT_URL}/reset/${token}`
+
+            await sendPasswordResetEmail(email, resetUrl)
+
+            return res.status(200).json({
+                success: true,
+                message: "Password reset token generated.",
+                token: token // to be sent to the user email and removed for the json
+            })
+
+        } catch (error) {
+            next(error)
+        }
+    }
+
+
+    async reset(req, res, next) {
+        try {
+            const { token } = req.params;
+            const { password } = req.body;
+
+            if (!token.trim()) {
+                throw new AppError("Invalid reset token.", 400)
+            }
+
+            if (!password.trim()) {
+                throw new AppError("Please enter a new password", 400)
+            }
+
+            const hashedToken = crypto.createHash("sha256").update(token).digest("hex")
+
+            const user = await Users.findByToken(hashedToken);
+
+            if (!user) {
+                throw new AppError("Invalid or expired reset link.", 400);
+            }
+
+            if (Date.now() >= new Date(user.reset_token_expires).getTime() || !user.reset_token_expires) {
+                throw new AppError("Invalid or expired reset link.", 400);
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10)
+
+            await Users.Reset(
+                hashedPassword,
+                user.id
+            )
+
+            return res.status(200).json({
+                success: true,
+                message: "Password has been Reset successfully."
+
+            })
+
+        } catch (error) {
+            next(error)
+        }
+    }
+
+
+
     async updateUserRole(req, res, next) {
         try {
             const { targetUserId } = req.params;
