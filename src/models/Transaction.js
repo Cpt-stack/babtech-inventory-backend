@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import getReturnPolicy from "../utils/statusResolver.js";
+import AppError from "../utils/AppError.js";
 
 class Transaction {
 
@@ -23,7 +24,15 @@ class Transaction {
     }
 
     static async checkout(data) {
-        const { equipment_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out } = data;
+        const { 
+            equipment_id, 
+            borrower, 
+            purpose, 
+            checkout_date, 
+            checkout_time, 
+            expected_return_time, 
+            condition_out 
+        } = data;
 
         const connection = await pool.getConnection();
 
@@ -32,26 +41,37 @@ class Transaction {
 
             const checkSQL = `SELECT id, name, status FROM equipment WHERE id = ? FOR UPDATE`;
             const [rows] = await connection.query(checkSQL, [equipment_id]);
+            
             if (rows.length === 0) {
-                const error = new Error("Equipment not Found");
-                error.statusCode = 404;
-                throw error;
+                throw new AppError("Equipment not Found", 404);
             }
 
             const item = rows[0];
 
             if (item.status !== "Available") {
-                const error = new Error(
-                    `Cannot checkout "${item.name}". Current status is "${item.status}".`
+                throw new AppError(
+                    `Cannot checkout "${item.name}". Current status is "${item.status}".`,
+                    409
                 );
-                error.statusCode = 409;
-                throw error;
             }
 
-            const insertSQL = `INSERT INTO transactions(equipment_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out, status) VALUES(?,?,?,?,?,?,?, "Active")`;
-            const [transResult] = await connection.query(insertSQL, [equipment_id, borrower, purpose, checkout_date, checkout_time, expected_return_time, condition_out]);
+            const insertSQL = `
+                INSERT INTO transactions(
+                    equipment_id, borrower, purpose, checkout_date, 
+                    checkout_time, expected_return_time, condition_out, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'Active')
+            `;
+            const [transResult] = await connection.query(insertSQL, [
+                equipment_id, 
+                borrower, 
+                purpose, 
+                checkout_date, 
+                checkout_time, 
+                expected_return_time, 
+                condition_out
+            ]);
             
-            const updateSQL = `UPDATE equipment SET status = "Checked Out" WHERE id = ?`;
+            const updateSQL = `UPDATE equipment SET status = 'Checked Out' WHERE id = ?`;
             await connection.query(updateSQL, [equipment_id]);
 
             await connection.commit();
@@ -66,10 +86,12 @@ class Transaction {
     }
 
     static async findAll() {
-        const sql = `SELECT t.*, e.asset_id, e.name AS equipment_name
-                     FROM transactions t
-                     JOIN equipment e ON t.equipment_id = e.id
-                     ORDER BY t.id desc`;
+        const sql = `
+            SELECT t.*, e.asset_id, e.name AS equipment_name
+            FROM transactions t
+            JOIN equipment e ON t.equipment_id = e.id
+            ORDER BY t.id DESC
+        `;
 
         const [rows] = await pool.query(sql);
         const now = new Date();
@@ -87,19 +109,9 @@ class Transaction {
 
     static async findOverDue() {
         try {
-            const sql = `SELECT t.*, e.asset_id, e.name AS equipment_name 
-                         FROM transactions t 
-                         JOIN equipment e ON t.equipment_id = e.id
-                         WHERE t.status = 'Active'
-                         ORDER BY t.id desc`;
-
-            const [rows] = await pool.query(sql);
-            const now = new Date();
-
-            return rows.filter(row => {
-                const deadline = Transaction.parseDeadline(row.checkout_date, row.expected_return_time);
-                return deadline !== null && now > deadline;
-            });
+            // Reuses findAll() so parsing logic and SQL are never duplicated
+            const transactions = await Transaction.findAll();
+            return transactions.filter(item => item.is_Overdue);
         } catch (error) {
             console.error("Error finding overdue transactions:", error.message);
             return [];
@@ -126,9 +138,7 @@ class Transaction {
             const [rows] = await connection.query(whatCategorySQL, [asset_id]);
 
             if (rows.length === 0) {
-                const error = new Error(`Equipment with Asset ID "${asset_id}" not found.`);
-                error.statusCode = 404;
-                throw error;
+                throw new AppError(`Equipment with Asset ID "${asset_id}" not found.`, 404);
             }
 
             const item = rows[0];
@@ -158,11 +168,10 @@ class Transaction {
             ]);
 
             if (transResult.affectedRows === 0) {
-                const error = new Error(
-                    `Transaction #${transaction_id} could not be updated. It may already be completed or does not exist.`
+                throw new AppError(
+                    `Transaction #${transaction_id} could not be updated. It may already be completed or does not exist.`,
+                    400
                 );
-                error.statusCode = 400;
-                throw error;
             }
 
             const updateEquipmentSQL = "UPDATE equipment SET status = ?, `condition` = ? WHERE id = ?";
@@ -176,48 +185,6 @@ class Transaction {
             throw error;
         } finally {
             connection.release();
-        }
-    }
-
-    static async findEquipment(equipment_id) {
-        try {
-            const sql = `SELECT t.*, e.asset_id, e.name AS equipment_name 
-                         FROM transactions t
-                         JOIN equipment e ON t.equipment_id = e.id
-                         WHERE t.equipment_id = ?
-                         ORDER BY t.checkout_date DESC, t.id DESC`;
-
-            const [rows] = await pool.query(sql, [equipment_id]);
-            const now = new Date();
-
-            return rows.map(row => {
-                const deadline = Transaction.parseDeadline(row.checkout_date, row.expected_return_time);
-                const isOverdue = row.status === "Active" && deadline !== null && now > deadline;
-
-                return {
-                    ...row,
-                    is_Overdue: isOverdue
-                };
-            });
-        } catch (error) {
-            console.error("Error finding equipment transactions:", error.message);
-            throw error;
-        }
-    }
-
-    static async findByBorrower(borrower) {
-        try {
-            const sql = `SELECT t.*, e.asset_id, e.name AS equipment_name
-                         FROM transactions t
-                         JOIN equipment e ON t.equipment_id = e.id
-                         WHERE t.borrower LIKE ? 
-                         ORDER BY return_date DESC`;
-
-            const [rows] = await pool.query(sql, [`%${borrower}%`]);
-            return rows;
-        } catch (error) {
-            console.error("Error finding borrower transactions:", error.message);
-            throw error;
         }
     }
 }
