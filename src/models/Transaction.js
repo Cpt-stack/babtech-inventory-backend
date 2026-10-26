@@ -4,7 +4,7 @@ import AppError from "../utils/AppError.js";
 
 class Transaction {
 
-  
+
     static parseDeadline(checkoutDate, returnTime) {
         if (!checkoutDate || !returnTime) return null;
 
@@ -26,9 +26,9 @@ class Transaction {
 
             timePart = `${hours}:${minutes}:00`
         }
-        const deadline = `${datePart}T${timePart}`
+        const deadline = new Date(`${datePart}T${timePart}`)
 
-        return isNaN(deadline.getTime()) ? null : deadline;
+        return (deadline instanceof Date && !isNaN(deadline.getTime())) ?deadline :null
     }
 
     static async checkout(data) {
@@ -102,11 +102,11 @@ class Transaction {
         `;
 
         const [rows] = await pool.query(sql);
-        const now = new Date();
+        const nowTimeStamp = new Date();
 
         return rows.map(row => {
             const deadline = Transaction.parseDeadline(row.checkout_date, row.expected_return_time);
-            const isOverdue = row.status === 'Active' && deadline !== null && now > deadline;
+            const isOverdue = row.status === 'Active' && deadline !== null && nowTimeStamp > deadline;
 
             return {
                 ...row,
