@@ -4,7 +4,7 @@ import AppError from "../utils/AppError.js";
 
 class Transaction {
 
-    // Helper method to safely parse MySQL dates and return times into valid JS Date objects
+  
     static parseDeadline(checkoutDate, returnTime) {
         if (!checkoutDate || !returnTime) return null;
 
@@ -16,22 +16,30 @@ class Transaction {
                 ? checkoutDate.split("T")[0]
                 : checkoutDate.split(" ")[0];
         }
+        if (!datePart) return null
 
-        const timePart = returnTime.trim();
-        const deadline = new Date(`${datePart}T${timePart.length === 5 ? timePart + ":00" : timePart}`);
+        let timePart = String(returnTime).trim();
+        if (timePart.length <= 5) {
+            const parts = timePart.split(":");
+            const hours = parts[0].padStart(2, "0");
+            const minutes = parts[1] ? parts[1].padStart(2, "0") : "00";
+
+            timePart = `${hours}:${minutes}:00`
+        }
+        const deadline = `${datePart}T${timePart}`
 
         return isNaN(deadline.getTime()) ? null : deadline;
     }
 
     static async checkout(data) {
-        const { 
-            equipment_id, 
-            borrower, 
-            purpose, 
-            checkout_date, 
-            checkout_time, 
-            expected_return_time, 
-            condition_out 
+        const {
+            equipment_id,
+            borrower,
+            purpose,
+            checkout_date,
+            checkout_time,
+            expected_return_time,
+            condition_out
         } = data;
 
         const connection = await pool.getConnection();
@@ -41,7 +49,7 @@ class Transaction {
 
             const checkSQL = `SELECT id, name, status FROM equipment WHERE id = ? FOR UPDATE`;
             const [rows] = await connection.query(checkSQL, [equipment_id]);
-            
+
             if (rows.length === 0) {
                 throw new AppError("Equipment not Found", 404);
             }
@@ -62,15 +70,15 @@ class Transaction {
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, 'Active')
             `;
             const [transResult] = await connection.query(insertSQL, [
-                equipment_id, 
-                borrower, 
-                purpose, 
-                checkout_date, 
-                checkout_time, 
-                expected_return_time, 
+                equipment_id,
+                borrower,
+                purpose,
+                checkout_date,
+                checkout_time,
+                expected_return_time,
                 condition_out
             ]);
-            
+
             const updateSQL = `UPDATE equipment SET status = 'Checked Out' WHERE id = ?`;
             await connection.query(updateSQL, [equipment_id]);
 
