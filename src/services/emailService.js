@@ -1,22 +1,14 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendPasswordResetEmail(toEmail, resetUrl) {
-    const mailOptions = {
-        from: `"Babtech Computers" <${process.env.EMAIL_USER}>`,
-        to: toEmail,
+    const data = await resend.emails.send({
+        from: "Babtech Computers <onboarding@resend.dev>",
+        to: [toEmail],
         subject: "Password Reset Request - Babtech Inventory",
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -40,7 +32,7 @@ export async function sendPasswordResetEmail(toEmail, resetUrl) {
                 </p>
             </div>
         `
-    };
+    });
 
-    return await transporter.sendMail(mailOptions);
+    return data;
 }
