@@ -133,14 +133,14 @@ class authController {
                 expires_At,
                 user.id
             )
-            const resetUrl = `${process.env.CLIENT_URL}/reset/${token}`
+            const resetUrl = `${process.env.CLIENT_URL}/reset/${hashedToken}`
 
             await sendPasswordResetEmail(email, resetUrl)
 
             return res.status(200).json({
                 success: true,
                 message: "Password reset token generated.",
-                token: token // to be sent to the user email and removed for the json
+                // token: token // to be sent to the user email and removed for the json
             })
 
         } catch (error) {
