@@ -154,23 +154,26 @@ class authController {
             const { token } = req.params;
             const { password } = req.body;
 
-            if (!token.trim()) {
+            if (!token.trim() || !token) {
                 throw new AppError("Invalid reset token.", 400)
             }
 
-            if (!password.trim()) {
+            if (!password.trim() || !password) {
                 throw new AppError("Please enter a new password", 400)
             }
 
-            const hashedToken = crypto.createHash("sha256").update(token).digest("hex")
 
-            const user = await Users.findByToken(hashedToken);
+            const user = await Users.findByToken(token);
 
             if (!user) {
                 throw new AppError("Invalid or expired reset link.", 400);
             }
 
-            if (Date.now() >= new Date(user.reset_token_expires).getTime() || !user.reset_token_expires) {
+            if (!user.reset_token_expires) {
+                throw new AppError("Invalid or expired reset link.", 400);
+            }
+
+            if (Date.now() >= new Date(user.reset_token_expires).getTime()) {
                 throw new AppError("Invalid or expired reset link.", 400);
             }
 
