@@ -133,7 +133,7 @@ class authController {
                 expires_At,
                 user.id
             )
-            const resetUrl = `${process.env.CLIENT_URL}/reset/${hashedToken}`
+            const resetUrl = `${process.env.CLIENT_URL}/reset/${token}`
 
             await sendPasswordResetEmail(email, resetUrl)
 
@@ -154,16 +154,18 @@ class authController {
             const { token } = req.params;
             const { password } = req.body;
 
-            if (!token.trim() || !token) {
-                throw new AppError("Invalid reset token.", 400)
-            }
-
-            if (!password.trim() || !password) {
-                throw new AppError("Please enter a new password", 400)
+            if (!token || !token.trim()) {
+                throw new AppError("Invalid reset token.", 400);
             }
 
 
-            const user = await Users.findByToken(token);
+            if (!password || !password.trim()) {
+                throw new AppError("Please enter a new password.", 400);
+            }
+
+            const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+            const user = await Users.findByToken(hashedToken);
 
             if (!user) {
                 throw new AppError("Invalid or expired reset link.", 400);
